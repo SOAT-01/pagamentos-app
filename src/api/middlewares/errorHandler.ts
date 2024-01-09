@@ -15,8 +15,6 @@ export function errorHandler(
     res: Response,
     next: NextFunction, // eslint-disable-line
 ): Response {
-    console.error(error);
-
     if (error instanceof ValidationError) {
         return res.status(StatusCode.unprocessableEntity).json({
             code: StatusCode.unprocessableEntity,

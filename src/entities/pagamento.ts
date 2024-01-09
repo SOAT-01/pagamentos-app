@@ -9,7 +9,7 @@ export enum PagamentoTipoEnum {
 
 export type PagamentoTipo = `${PagamentoTipoEnum}`;
 
-export type PagamentoFields = Pick<Pagamento, "id" | "pedidoId" | "tipo" | "valorTotal">;
+export type PagamentoFields = Partial<Pagamento> & Pick<Pagamento, "pedidoId" | "valorTotal">;
 
 export class Pagamento implements Entity {
     id: string;
@@ -20,7 +20,7 @@ export class Pagamento implements Entity {
     constructor(fields: PagamentoFields) {
         this.id = fields.id;
         this.pedidoId = fields.pedidoId;
-        this.tipo = fields.tipo;
+        this.tipo = fields.tipo ?? PagamentoTipoEnum.Pendente;
         this.valorTotal = fields.valorTotal;
 
         this.validateEntity();
@@ -35,22 +35,18 @@ export class Pagamento implements Entity {
             this.pedidoId,
             "pedidoId must be a valid ObjectId",
         );
-        AssertionConcern.assertArgumentNotEmpty(
-            this.pedidoId,
-            "status is required",
-        );
         AssertionConcern.assertArgumentIsValid(
             this.tipo,
             Object.values(PagamentoTipoEnum),
-            `status must be one of ${Object.values(PagamentoTipoEnum)}`,
+            `tipo must be one of ${Object.values(PagamentoTipoEnum)}`,
         );
         AssertionConcern.assertArgumentNotEmpty(
             this.valorTotal,
-            "Valor total is required",
+            "valorTotal is required",
         );
         AssertionConcern.assertArgumentIsBiggerThanZero(
             this.valorTotal,
-            "Valor total must be bigger than zero",
+            "valorTotal must be bigger than zero",
         );
 
     }

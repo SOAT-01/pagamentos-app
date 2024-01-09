@@ -1,6 +1,6 @@
 import { PagamentoDTO } from "useCases";
 import { PagamentoGateway } from "interfaces/gateways";
-import { Pagamento } from "entities/pagamento";
+import { Pagamento, PagamentoTipoEnum } from "entities/pagamento";
 import { PagamentoModel } from "external/mongo/models";
 import { PagamentoMapper } from "adapters/mappers";
 
@@ -62,6 +62,25 @@ export class PagamentoMongoGateway implements PagamentoGateway {
             );
         }
 
+    }
+
+    async updateStatus(id: string, status: PagamentoTipoEnum): Promise<Pagamento> {
+        const result = await this.pagamentoModel.findOneAndUpdate(
+            { _id: id },
+            { status },
+            {
+                new: true,
+            },
+        );
+
+        return PagamentoMapper.toDomain(
+            {
+                id: result.id,
+                tipo: result.tipo,
+                pedidoId: result.pedidoId,
+                valorTotal: result.valorTotal,
+            },
+        );
     }
 
     async getByPedidoId(pedidoId: string): Promise<Pagamento> {

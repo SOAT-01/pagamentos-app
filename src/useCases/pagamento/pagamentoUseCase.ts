@@ -4,6 +4,8 @@ import { IPagamentoUseCase } from "./pagamento.interface";
 import { PagamentoMapper } from "adapters/mappers";
 import { ResourceNotFoundError } from "utils/errors/resourceNotFoundError";
 import { PagamentoTipoEnum } from "entities/pagamento";
+import { AssertionConcern } from "utils/assertionConcern";
+import { BadError } from "utils/errors/badError";
 
 export class PagamentoUseCase implements IPagamentoUseCase {
     constructor(private readonly pagamentoGateway: PagamentoGateway) {}
@@ -13,10 +15,10 @@ export class PagamentoUseCase implements IPagamentoUseCase {
             throw new Error("Não é necessário informar o tipo de pagamento");
         }
 
-        const novoPagamento: PagamentoDTO = {
-            pedidoId: pagamento.pedidoId,
-            valorTotal: pagamento.valorTotal
-        };
+        const novoPagamento = PagamentoMapper.toDomain(pagamento);
+        const alreadyExists = await this.pagamentoGateway.checkDuplicate({ pedidoId: pagamento.pedidoId });
+
+        if (alreadyExists) throw new Error("Pagamento para esse pedido já existe");
 
         const result = await this.pagamentoGateway.create(novoPagamento);
         return PagamentoMapper.toDTO(result);
@@ -41,6 +43,34 @@ export class PagamentoUseCase implements IPagamentoUseCase {
 
         if (!result) throw new ResourceNotFoundError("Pedido não encontrado");
 
+        return PagamentoMapper.toDTO(result);
+    }
+
+    public async updateStatus(id: string, status: PagamentoTipoEnum): Promise<PagamentoDTO> {
+        const pagamentoToUpdateStatus = await this.pagamentoGateway.getById(id);
+        const possibleStatus = Object.values(PagamentoTipoEnum);
+
+        AssertionConcern.assertArgumentNotEmpty(
+            status,
+            "É necessário informar o status",
+        );
+        AssertionConcern.assertArgumentIsValid(
+            status,
+            possibleStatus,
+            "É necessário informar um status válido",
+        );
+
+        if (!pagamentoToUpdateStatus) {
+            throw new ResourceNotFoundError("Pagamento não encontrado");
+        }
+
+        if (pagamentoToUpdateStatus.tipo !== PagamentoTipoEnum.Pendente) {
+            throw new BadError(
+                `Não é possível alterar o status pois já foi ${pagamentoToUpdateStatus.tipo}!`,
+            );
+        }
+
+        const result = await this.pagamentoGateway.updateStatus(id, status);
         return PagamentoMapper.toDTO(result);
     }
 }

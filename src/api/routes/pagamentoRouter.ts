@@ -16,5 +16,9 @@ export function makePagamentoRouter(): Router {
         pagamentoController.getByPedidoId(req, res, next),
     );
 
+    pagamentoRouter.patch("/:id/update-status", async (req, res, next) =>
+        pagamentoController.patchStatus(req, res, next),
+    );
+
     return pagamentoRouter;
 }

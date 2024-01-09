@@ -178,4 +178,64 @@ export const PagamentoPaths = {
             },
         },
     },
+    "/pedido/{id}/update-status": {
+        patch: {
+            tags: ["pagamento"],
+            summary: "Rota para atualizar o status de um pagamento",
+            parameters: [
+                {
+                    in: "path",
+                    name: "id",
+                    description: "id do pagamento a ser atualizado",
+                    required: true,
+                    schema: {
+                        type: "string",
+                    },
+                },
+            ],
+            requestBody: {
+                required: true,
+                content: {
+                    "application/json": {
+                        schema: {
+                            type: "object",
+                            properties: {
+                                status: {
+                                    type: "string",
+                                    enum: PagamentoEnum,
+                                    default: "pendente",
+                                },
+                            },
+                            required: "status",
+                        },
+                    },
+                },
+            },
+            responses: {
+                201: {
+                    description: "Status do pagamento atualizado",
+                    content: {
+                        "application/json": {
+                            schema: {
+                                type: "object",
+                                properties: {
+                                    id: {
+                                        type: "string",
+                                    },
+                                    ...PagamentoFields,
+                                },
+                                required: RequiredFields,
+                            },
+                        },
+                    },
+                },
+                422: {
+                    ...unprocessableEntity,
+                },
+                500: {
+                    ...serverError,
+                },
+            },
+        },
+    },
 };
