@@ -6,6 +6,8 @@ import { ResourceNotFoundError } from "utils/errors/resourceNotFoundError";
 import { PagamentoTipoEnum } from "entities/pagamento";
 import { AssertionConcern } from "utils/assertionConcern";
 import { BadError } from "utils/errors/badError";
+import { PedidoSvcGateway } from "gateways/pedidoSvcGateway";
+import { pedidoSvcAPi } from "external/pedidoSvc";
 
 export class PagamentoUseCase implements IPagamentoUseCase {
     constructor(private readonly pagamentoGateway: PagamentoGateway) {}
@@ -71,6 +73,15 @@ export class PagamentoUseCase implements IPagamentoUseCase {
         }
 
         const result = await this.pagamentoGateway.updateStatus(id, status);
+
+        // TODO: não sei se deveria por isso aqui
+        const pedidoSvcApi = pedidoSvcAPi;
+        const pedidoSvcGateway = new PedidoSvcGateway(pedidoSvcApi);
+
+        if (result.tipo === PagamentoTipoEnum.Aprovado) {
+            pedidoSvcGateway.updateOrderPaymentStatus(result.id);
+        }
+
         return PagamentoMapper.toDTO(result);
     }
 }
