@@ -19,7 +19,6 @@ export class MercadoPagoGateway {
         return PagamentoEventMockMapper.toDomain({
             pedidoId: data.external_reference,
             tipo: this.getTipo(data),
-            valorTotal: data.total_amount
         });
     }
 
@@ -30,7 +29,6 @@ export class MercadoPagoGateway {
                 external_reference: pagamento.pedidoId,
                 title: pagamento.pedidoId,
                 description: pagamento.pedidoId,
-                total_amount: pagamento.valorTotal,
                 items: [
                     {
                         title: "PRODUTO 1",
