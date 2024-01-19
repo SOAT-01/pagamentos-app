@@ -11,10 +11,7 @@
     "start:docker": "docker compose -p fastfood up --build",
     "lint": "eslint .",
     "lint:fix": "eslint --fix --ext .ts .",
-    "typecheck": "tsc --project tsconfig.json --noEmit --pretty",
-    "generate": "drizzle-kit generate:pg --config=./src/external/postgres/drizzle.config.ts",
-    "migrate": "tsx ./src/external/postgres/helpers/migratePostgresDatabase.ts",
-    "seed": "tsx ./src/external/postgres/helpers/seedPostgresDatabase.ts"
+    "typecheck": "tsc --project tsconfig.json --noEmit --pretty"
   },
   "repository": {
     "type": "git",
