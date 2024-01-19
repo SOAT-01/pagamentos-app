@@ -1,7 +1,7 @@
 import { serverConfig } from "config";
 import { PagamentoEventMockMapper } from "adapters/mappers";
 import { PagamentoEventMock } from "entities/pagamentoEventMock";
-import { MercadoPagoApi, MercadoPagoMerchantOrder } from "external/mercadoPago";
+import { MercadoPagoApi, MercadoPagoMerchantOrder, MercadoPagoPayment } from "external/mercadoPago";
 
 // ! WORK IN PROGRESS
 export class MercadoPagoGateway {
@@ -48,11 +48,7 @@ export class MercadoPagoGateway {
         status,
         payments,
     }: MercadoPagoMerchantOrder): PagamentoEventMock["tipo"] {
-        const [lastPayment] = payments.sort(
-            (a, b) =>
-                new Date(b.date_created).getTime() -
-                new Date(a.date_created).getTime(),
-        );
+        const lastPayment = this.getLastPayment(payments);
 
         if (status === "closed" && lastPayment.status !== "approved") {
             return "recusado";
@@ -64,4 +60,15 @@ export class MercadoPagoGateway {
 
         return "pendente";
     }
+
+    private getLastPayment(payments: MercadoPagoPayment[]) {
+        payments.sort(
+            (a, b) =>
+                new Date(b.date_created).getTime() -
+                new Date(a.date_created).getTime(),
+        );
+
+        return payments[0];
+    }
 }
+

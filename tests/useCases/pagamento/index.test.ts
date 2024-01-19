@@ -169,8 +169,6 @@ describe("Given PagamentoUseCases", () => {
             undefined,
           );
 
-          const updateStatus = jest.spyOn(gatewayStub, "updateStatus");
-
           const pagamento = sut.updateStatus(
             "nonexistent-id",
             PagamentoTipoEnum.Aprovado,
