@@ -11,26 +11,6 @@ export class AssertionConcern {
         }
     }
 
-    public static assertArgumentMaxLength(
-        arg: string,
-        max: number,
-        message: string,
-    ): void {
-        if (arg.length > max) {
-            throw new ValidationError(message);
-        }
-    }
-
-    public static assertArgumentMinLength(
-        arg: string,
-        min: number,
-        message: string,
-    ): void {
-        if (arg.length <= min) {
-            throw new ValidationError(message);
-        }
-    }
-
     public static assertArgumentIsValid(
         arg: string,
         acceptedTypes: string[],
@@ -39,38 +19,6 @@ export class AssertionConcern {
         if (!acceptedTypes.includes(arg)) {
             throw new ValidationError(message);
         }
-    }
-
-    public static assertArgumentIsObject<T>(object: T): boolean {
-        return object != null && typeof object === "object";
-    }
-
-    public static assertObjectEquality<T>(object1: T, object2: T): boolean {
-        const props1 = Object.getOwnPropertyNames(object1);
-        const props2 = Object.getOwnPropertyNames(object2);
-
-        if (props1.length !== props2.length) {
-            return false;
-        }
-
-        for (const [index] of props1.entries()) {
-            const val1 = object1[props1[index]];
-            const val2 = object2[props1[index]];
-
-            const isObjects =
-                AssertionConcern.assertArgumentIsObject(val1) &&
-                AssertionConcern.assertArgumentIsObject(val2);
-
-            if (
-                (isObjects &&
-                    !AssertionConcern.assertObjectEquality(val1, val2)) ||
-                (!isObjects && val1 !== val2)
-            ) {
-                return false;
-            }
-        }
-
-        return true;
     }
 
     public static assertArgumentIsBiggerThanZero(
@@ -87,11 +35,5 @@ export class AssertionConcern {
         if (!ObjectIdRegex.test(id)) {
             throw new ValidationError(message);
         }
-    }
-
-    public static isUUID(value = ""): boolean {
-        const UUIDRegex =
-            /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
-        return UUIDRegex.test(value);
     }
 }
