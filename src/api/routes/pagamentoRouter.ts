@@ -8,6 +8,10 @@ export function makePagamentoRouter(): Router {
         pagamentoController.post(req, res, next),
     );
 
+    pagamentoRouter.get("/", async (req, res, next) =>
+        pagamentoController.get(req, res, next),
+    );
+
     pagamentoRouter.get("/:id", async (req, res, next) =>
         pagamentoController.getById(req, res, next),
     );

@@ -67,7 +67,7 @@ export class PagamentoMongoGateway implements PagamentoGateway {
     async updateStatus(id: string, status: PagamentoTipoEnum): Promise<Pagamento> {
         const result = await this.pagamentoModel.findOneAndUpdate(
             { _id: id },
-            { status },
+            { tipo: status },
             {
                 new: true,
             },

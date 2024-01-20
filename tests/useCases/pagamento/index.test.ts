@@ -70,13 +70,13 @@ describe("Given PagamentoUseCases", () => {
       });
 
       describe("When the pedidoId already exists", () => {
-          it("should throw 'Pagamento para esse pedido já existe' error", async () => {
+          it("should throw 'Já existe registro para esse pedido' error", async () => {
               await expect(
                   sut.create({
                       pedidoId: mockPedidoId,
                       valorTotal: 28
                   }),
-              ).rejects.toThrow("Pagamento para esse pedido já existe");
+              ).rejects.toThrow("Já existe registro para esse pedido");
           });
       });
 

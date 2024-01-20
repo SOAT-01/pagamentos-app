@@ -14,13 +14,13 @@ export class PagamentoUseCase implements IPagamentoUseCase {
 
     public async create(pagamento: PagamentoDTO): Promise<PagamentoDTO> {
         if (pagamento.tipo && pagamento.tipo !== PagamentoTipoEnum.Pendente) {
-            throw new Error("Não é necessário informar o tipo de pagamento");
+            throw new BadError("Não é necessário informar o tipo de pagamento");
         }
 
         const novoPagamento = PagamentoMapper.toDomain(pagamento);
         const alreadyExists = await this.pagamentoGateway.checkDuplicate({ pedidoId: pagamento.pedidoId });
 
-        if (alreadyExists) throw new Error("Pagamento para esse pedido já existe");
+        if (alreadyExists) throw new BadError("Já existe registro para esse pedido");
 
         const result = await this.pagamentoGateway.create(novoPagamento);
         return PagamentoMapper.toDTO(result);

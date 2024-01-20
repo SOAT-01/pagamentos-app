@@ -62,7 +62,6 @@ export const PagamentoPaths = {
                             },
                             example: {
                                 pedidoId: "649cdaa7a6f75c45046d797d",
-                                tipo: "Pendente",
                                 valorTotal: 50,
                             },
                             required: RequiredFields,
