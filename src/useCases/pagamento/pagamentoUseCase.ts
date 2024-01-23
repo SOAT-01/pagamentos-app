@@ -78,9 +78,7 @@ export class PagamentoUseCase implements IPagamentoUseCase {
         const pedidoSvcApi = pedidoSvcAPi;
         const pedidoSvcGateway = new PedidoSvcGateway(pedidoSvcApi);
 
-        if (result.tipo === PagamentoTipoEnum.Aprovado) {
-            pedidoSvcGateway.updateOrderPaymentStatus(result.id);
-        }
+        pedidoSvcGateway.updateOrderPaymentStatus(result.id, result.tipo as PagamentoTipoEnum);
 
         return PagamentoMapper.toDTO(result);
     }
