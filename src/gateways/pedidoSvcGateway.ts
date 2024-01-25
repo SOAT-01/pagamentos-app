@@ -6,7 +6,7 @@ export class PedidoSvcGateway {
 
     async updateOrderPaymentStatus(pedidoId: string, tipo: PagamentoTipoEnum): Promise<string> {
         const { data } = await this.pedidoSvcApi.patch<{ qr_data: string }>(
-            `/${pedidoId}/update-payment-status`, { status: this.parseStatusPedidoSvc(tipo) });
+            `/${pedidoId}/update-payment-status`, { statusPagamento: this.parseStatusPedidoSvc(tipo) });
         return data.qr_data;
     }
 
