@@ -1,4 +1,5 @@
 import { Pagamento, PagamentoTipoEnum } from "entities/pagamento";
+import { PedidoSvcGateway } from "gateways/pedidoSvcGateway";
 import { PagamentoGateway } from "interfaces/gateways";
 
 import { PagamentoUseCase } from "useCases";
@@ -15,41 +16,56 @@ describe("Given PagamentoUseCases", () => {
 
     const mockPagamento = new Pagamento({
         pedidoId: "dfffddc535266e603724b4ba",
-        valorTotal: 38.90,
+        valorTotal: 38.9,
     });
+    let pedidoSvcGatewayStub: Partial<PedidoSvcGateway>;
+
     class PagamentoGatewayStub implements PagamentoGateway {
-      create(_: Pagamento): Promise<Pagamento> {
-        return Promise.resolve(mockPagamento);
-      }
-  
-      getAll(_?: Partial<Pagamento>): Promise<Pagamento[]> {
-        return Promise.resolve([mockPagamento])
-      }
-
-      getById(_: string): Promise<Pagamento> {
-        return Promise.resolve(mockPagamento);
-      }
-
-      getByPedidoId(_: string): Promise<Pagamento> {
-        return Promise.resolve(mockPagamento);
-      }
-
-      updateStatus(_: string, __: PagamentoTipoEnum): Promise<Pagamento> {
-        return Promise.resolve(mockPagamento);
-      }
-      
-      checkDuplicate(args: { pedidoId: string; }): Promise<boolean> {
-        if (args.pedidoId === mockPedidoId) {
-          return Promise.resolve(true);
+        create(_: Pagamento): Promise<Pagamento> {
+            return Promise.resolve(mockPagamento);
         }
 
-        return Promise.resolve(false);
-      }
+        getAll(_?: Partial<Pagamento>): Promise<Pagamento[]> {
+            return Promise.resolve([mockPagamento]);
+        }
+
+        getById(_: string): Promise<Pagamento> {
+            return Promise.resolve(mockPagamento);
+        }
+
+        getByPedidoId(_: string): Promise<Pagamento> {
+            return Promise.resolve(mockPagamento);
+        }
+
+        updateStatus(_: string, __: PagamentoTipoEnum): Promise<Pagamento> {
+            return Promise.resolve(mockPagamento);
+        }
+
+        checkDuplicate(args: { pedidoId: string }): Promise<boolean> {
+            if (args.pedidoId === mockPedidoId) {
+                return Promise.resolve(true);
+            }
+
+            return Promise.resolve(false);
+        }
+    }
+    class PedidoSvcGatewayStub implements Partial<PedidoSvcGateway> {
+        updateOrderPaymentStatus(
+            pedidoId: string,
+            tipo: PagamentoTipoEnum,
+        ): Promise<void> {
+          return Promise.resolve();
+        }
     }
 
     beforeAll(() => {
         gatewayStub = new PagamentoGatewayStub();
-        sut = new PagamentoUseCase(gatewayStub);
+        pedidoSvcGatewayStub = new PedidoSvcGatewayStub();
+
+        sut = new PagamentoUseCase(
+            gatewayStub,
+            pedidoSvcGatewayStub as PedidoSvcGateway,
+        );
     });
 
     afterAll(() => {
@@ -57,160 +73,184 @@ describe("Given PagamentoUseCases", () => {
     });
 
     describe("Given create method is called", () => {
-      describe("When all the data is correct and no problems are found", () => {
-          it("should call create on the gateway and return the created pagamento", async () => {
-              const create = jest.spyOn(gatewayStub, "create");
+        describe("When all the data is correct and no problems are found", () => {
+            it("should call create on the gateway and return the created pagamento", async () => {
+                const create = jest.spyOn(gatewayStub, "create");
 
-              const pagamento = await sut.create(mockPagamento);
+                const pagamento = await sut.create(mockPagamento);
 
-              expect(pagamento.pedidoId).toEqual(mockPagamento.pedidoId);
-              expect(pagamento.valorTotal).toEqual(mockPagamento.valorTotal);
-              expect(create).toHaveBeenCalledWith(mockPagamento);
-          });
-      });
+                expect(pagamento.pedidoId).toEqual(mockPagamento.pedidoId);
+                expect(pagamento.valorTotal).toEqual(mockPagamento.valorTotal);
+                expect(create).toHaveBeenCalledWith(mockPagamento);
+            });
+        });
 
-      describe("When the pedidoId already exists", () => {
-          it("should throw 'Já existe registro para esse pedido' error", async () => {
-              await expect(
-                  sut.create({
-                      pedidoId: mockPedidoId,
-                      valorTotal: 28
-                  }),
-              ).rejects.toThrow("Já existe registro para esse pedido");
-          });
-      });
+        describe("When the pedidoId already exists", () => {
+            it("should throw 'Já existe registro para esse pedido' error", async () => {
+                await expect(
+                    sut.create({
+                        pedidoId: mockPedidoId,
+                        valorTotal: 28,
+                    }),
+                ).rejects.toThrow("Já existe registro para esse pedido");
+            });
+        });
 
-      describe("When tipo is informed", () => {
-          it("should throw 'Não é necessário informar o tipo de pagamento' error", async () => {
-              await expect(
-                  sut.create({...mockPagamento, tipo: PagamentoTipoEnum.Aprovado}),
-              ).rejects.toThrow("Não é necessário informar o tipo de pagamento");
-          });
-      });
+        describe("When tipo is informed", () => {
+            it("should throw 'Não é necessário informar o tipo de pagamento' error", async () => {
+                await expect(
+                    sut.create({
+                        ...mockPagamento,
+                        tipo: PagamentoTipoEnum.Aprovado,
+                    }),
+                ).rejects.toThrow(
+                    "Não é necessário informar o tipo de pagamento",
+                );
+            });
+        });
     });
 
     describe("Given getAll method is called", () => {
-          it("should return all Pagamento", async () => {
-              const getAll = jest.spyOn(gatewayStub, "getAll");
+        it("should return all Pagamento", async () => {
+            const getAll = jest.spyOn(gatewayStub, "getAll");
 
-              const all = await sut.getAll();
+            const all = await sut.getAll();
 
-              expect(getAll).toHaveBeenCalled();
-              expect(all).toEqual([mockPagamento]);
-          });
+            expect(getAll).toHaveBeenCalled();
+            expect(all).toEqual([mockPagamento]);
+        });
     });
 
     describe("Given getById method is called", () => {
-      describe("When id exists", () => {
-        it("should return Pagamento", async () => {
-          const getById = jest.spyOn(gatewayStub, "getById");
+        describe("When id exists", () => {
+            it("should return Pagamento", async () => {
+                const getById = jest.spyOn(gatewayStub, "getById");
 
-          const pagamento = await sut.getById(mockPagamento.id);
+                const pagamento = await sut.getById(mockPagamento.id);
 
-          expect(getById).toHaveBeenCalledWith(mockPagamento.id);
-          expect(pagamento).toEqual(mockPagamento);
+                expect(getById).toHaveBeenCalledWith(mockPagamento.id);
+                expect(pagamento).toEqual(mockPagamento);
+            });
         });
-      });
 
-      describe("When id do not exists", () => {
-        it("should throw an ResourceNotFoundError", async () => {
-          jest.spyOn(gatewayStub, "getById").mockResolvedValueOnce(
-            undefined,
-          );
+        describe("When id do not exists", () => {
+            it("should throw an ResourceNotFoundError", async () => {
+                jest.spyOn(gatewayStub, "getById").mockResolvedValueOnce(
+                    undefined,
+                );
 
-          await expect(sut.getById(mockPagamentoId)).rejects.toThrow(
-            new ResourceNotFoundError("Pagamento não encontrado"),
-          );
+                await expect(sut.getById(mockPagamentoId)).rejects.toThrow(
+                    new ResourceNotFoundError("Pagamento não encontrado"),
+                );
+            });
         });
-      });
     });
 
     describe("Given getByPedidoId method is called", () => {
-      describe("When pedidoId exists", () => {
-        it("should return Pagamento", async () => {
-          const getByPedidoId = jest.spyOn(gatewayStub, "getByPedidoId");
+        describe("When pedidoId exists", () => {
+            it("should return Pagamento", async () => {
+                const getByPedidoId = jest.spyOn(gatewayStub, "getByPedidoId");
 
-          const pagamento = await sut.getByPedidoId(mockPagamento.pedidoId);
+                const pagamento = await sut.getByPedidoId(
+                    mockPagamento.pedidoId,
+                );
 
-          expect(getByPedidoId).toHaveBeenCalledWith(mockPagamento.pedidoId);
-          expect(pagamento).toEqual(mockPagamento);
+                expect(getByPedidoId).toHaveBeenCalledWith(
+                    mockPagamento.pedidoId,
+                );
+                expect(pagamento).toEqual(mockPagamento);
+            });
         });
-      });
 
-      describe("When pedidoId do not exists", () => {
-        it("should throw an ResourceNotFoundError", async () => {
-          jest.spyOn(gatewayStub, "getByPedidoId").mockResolvedValueOnce(
-            undefined,
-          );
+        describe("When pedidoId do not exists", () => {
+            it("should throw an ResourceNotFoundError", async () => {
+                jest.spyOn(gatewayStub, "getByPedidoId").mockResolvedValueOnce(
+                    undefined,
+                );
 
-          await expect(sut.getByPedidoId(mockPedidoId)).rejects.toThrow(
-            new ResourceNotFoundError("Pedido não encontrado"),
-          );
+                await expect(sut.getByPedidoId(mockPedidoId)).rejects.toThrow(
+                    new ResourceNotFoundError("Pedido não encontrado"),
+                );
+            });
         });
-      });
     });
 
     describe("Given updateStatus method is called", () => {
-      describe("When id exists and tipo is 'Pendente'", () => {
-        it("should return Pagamento", async () => {
-          const updateStatus = jest.spyOn(gatewayStub, "updateStatus");
+        describe("When id exists and tipo is 'Pendente'", () => {
+            it("should return Pagamento", async () => {
+                const updateStatus = jest.spyOn(gatewayStub, "updateStatus");
 
-          const pagamento = await sut.updateStatus(mockPagamento.id, PagamentoTipoEnum.Aprovado);
+                const pagamento = await sut.updateStatus(
+                    mockPagamento.id,
+                    PagamentoTipoEnum.Aprovado,
+                );
 
-          expect(updateStatus).toHaveBeenCalledWith(mockPagamento.id, PagamentoTipoEnum.Aprovado);
-          expect(pagamento).toEqual(mockPagamento);
+                expect(updateStatus).toHaveBeenCalledWith(
+                    mockPagamento.id,
+                    PagamentoTipoEnum.Aprovado,
+                );
+                expect(pagamento).toEqual(mockPagamento);
+            });
         });
-      });
 
-      describe("When id do not exists", () => {
-        it("should throw an ResourceNotFoundError", async () => {
+        describe("When id do not exists", () => {
+            it("should throw an ResourceNotFoundError", async () => {
+                const getById = jest
+                    .spyOn(gatewayStub, "getById")
+                    .mockResolvedValueOnce(undefined);
 
-          const getById = jest.spyOn(gatewayStub, "getById").mockResolvedValueOnce(
-            undefined,
-          );
+                const pagamento = sut.updateStatus(
+                    "nonexistent-id",
+                    PagamentoTipoEnum.Aprovado,
+                );
 
-          const pagamento = sut.updateStatus(
-            "nonexistent-id",
-            PagamentoTipoEnum.Aprovado,
-          );
+                await expect(pagamento).rejects.toThrow(
+                    new ResourceNotFoundError("Pagamento não encontrado"),
+                );
 
-          await expect(pagamento).rejects.toThrow(
-            new ResourceNotFoundError("Pagamento não encontrado"),
-          );
-
-          expect(getById).toHaveBeenCalledWith("nonexistent-id");
+                expect(getById).toHaveBeenCalledWith("nonexistent-id");
+            });
         });
-      });
 
-      describe("When status is not informed", () => {
-        it("should throw an ValidationError", async () => {
-          const pagamento = sut.updateStatus(mockPagamento.id, undefined);
+        describe("When status is not informed", () => {
+            it("should throw an ValidationError", async () => {
+                const pagamento = sut.updateStatus(mockPagamento.id, undefined);
 
-          await expect(pagamento).rejects.toThrow(
-            new ValidationError("É necessário informar o status"),
-          );
+                await expect(pagamento).rejects.toThrow(
+                    new ValidationError("É necessário informar o status"),
+                );
+            });
         });
-      });
 
-      describe("When status informed is invalid", () => {
-        it("should throw an ValidationError", async () => {
-          const pagamento = sut.updateStatus(mockPagamento.id, "invalid_status" as any);
+        describe("When status informed is invalid", () => {
+            it("should throw an ValidationError", async () => {
+                const pagamento = sut.updateStatus(
+                    mockPagamento.id,
+                    "invalid_status" as any,
+                );
 
-          await expect(pagamento).rejects.toThrow(
-            new ValidationError("É necessário informar um status válido"),
-          );
+                await expect(pagamento).rejects.toThrow(
+                    new ValidationError(
+                        "É necessário informar um status válido",
+                    ),
+                );
+            });
         });
-      });
-      
-      describe("When pagamento already has Aprovado or Recusado status", () => {
-        it("should throw an ValidationError", async () => {
-          mockPagamento.tipo = PagamentoTipoEnum.Recusado;
-          const pagamento = sut.updateStatus(mockPagamento.id, PagamentoTipoEnum.Aprovado);
 
-          await expect(pagamento).rejects.toThrow(
-            new BadError(`Não é possível alterar o status pois já foi ${PagamentoTipoEnum.Recusado}!`),
-          );
+        describe("When pagamento already has Aprovado or Recusado status", () => {
+            it("should throw an ValidationError", async () => {
+                mockPagamento.tipo = PagamentoTipoEnum.Recusado;
+                const pagamento = sut.updateStatus(
+                    mockPagamento.id,
+                    PagamentoTipoEnum.Aprovado,
+                );
+
+                await expect(pagamento).rejects.toThrow(
+                    new BadError(
+                        `Não é possível alterar o status pois já foi ${PagamentoTipoEnum.Recusado}!`,
+                    ),
+                );
+            });
         });
-      });
     });
 });
