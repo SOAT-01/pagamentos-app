@@ -24,7 +24,7 @@ export const serverConfig = {
     pedidosMicroService: {
         apiUrl: parseEnvStr(
             "PEDIDO_SVC_URL",
-            "http://localhost:6001/api/pedido",
+            "http://localhost:6004/api/pedido",
         ),
     }
 } as const;
