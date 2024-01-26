@@ -16,7 +16,7 @@ export class PedidoSvcGateway {
     parseStatusPedidoSvc(tipo: PagamentoTipoEnum): PedidoSvcStatus {
         const statusMap = {
             [PagamentoTipoEnum.Aprovado]: "pagamento_aprovado",
-            [PagamentoTipoEnum.Recusado]: "pagamento_recusado",
+            [PagamentoTipoEnum.Recusado]: "pagamento_nao_autorizado",
         };
 
         const status = statusMap[tipo] || "pagamento_pendente";
