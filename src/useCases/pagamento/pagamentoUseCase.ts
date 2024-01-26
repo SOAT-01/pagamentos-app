@@ -10,7 +10,10 @@ import { PedidoSvcGateway } from "gateways/pedidoSvcGateway";
 import { pedidoSvcAPi } from "external/pedidoSvc";
 
 export class PagamentoUseCase implements IPagamentoUseCase {
-    constructor(private readonly pagamentoGateway: PagamentoGateway) {}
+    constructor(
+        private readonly pagamentoGateway: PagamentoGateway,
+        private readonly pedidoSvcGateway: PedidoSvcGateway,
+    ) {}
 
     public async create(pagamento: PagamentoDTO): Promise<PagamentoDTO> {
         if (pagamento.tipo && pagamento.tipo !== PagamentoTipoEnum.Pendente) {
@@ -18,9 +21,12 @@ export class PagamentoUseCase implements IPagamentoUseCase {
         }
 
         const novoPagamento = PagamentoMapper.toDomain(pagamento);
-        const alreadyExists = await this.pagamentoGateway.checkDuplicate({ pedidoId: pagamento.pedidoId });
+        const alreadyExists = await this.pagamentoGateway.checkDuplicate({
+            pedidoId: pagamento.pedidoId,
+        });
 
-        if (alreadyExists) throw new BadError("Já existe registro para esse pedido");
+        if (alreadyExists)
+            throw new BadError("Já existe registro para esse pedido");
 
         const result = await this.pagamentoGateway.create(novoPagamento);
         return PagamentoMapper.toDTO(result);
@@ -35,7 +41,8 @@ export class PagamentoUseCase implements IPagamentoUseCase {
     public async getById(id: string): Promise<PagamentoDTO> {
         const result = await this.pagamentoGateway.getById(id);
 
-        if (!result) throw new ResourceNotFoundError("Pagamento não encontrado");
+        if (!result)
+            throw new ResourceNotFoundError("Pagamento não encontrado");
 
         return PagamentoMapper.toDTO(result);
     }
@@ -48,7 +55,10 @@ export class PagamentoUseCase implements IPagamentoUseCase {
         return PagamentoMapper.toDTO(result);
     }
 
-    public async updateStatus(id: string, status: PagamentoTipoEnum): Promise<PagamentoDTO> {
+    public async updateStatus(
+        id: string,
+        status: PagamentoTipoEnum,
+    ): Promise<PagamentoDTO> {
         const pagamentoToUpdateStatus = await this.pagamentoGateway.getById(id);
         const possibleStatus = Object.values(PagamentoTipoEnum);
 
@@ -74,11 +84,10 @@ export class PagamentoUseCase implements IPagamentoUseCase {
 
         const result = await this.pagamentoGateway.updateStatus(id, status);
 
-        // TODO: não sei se deveria por isso aqui
-        const pedidoSvcApi = pedidoSvcAPi;
-        const pedidoSvcGateway = new PedidoSvcGateway(pedidoSvcApi);
-
-        pedidoSvcGateway.updateOrderPaymentStatus(result.id, result.tipo as PagamentoTipoEnum);
+        await this.pedidoSvcGateway.updateOrderPaymentStatus(
+            result.pedidoId,
+            result.tipo as PagamentoTipoEnum,
+        );
 
         return PagamentoMapper.toDTO(result);
     }

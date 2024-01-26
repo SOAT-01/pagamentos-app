@@ -16,12 +16,12 @@ export function makePagamentoRouter(): Router {
         pagamentoController.getById(req, res, next),
     );
 
-    pagamentoRouter.get("/getByPedido/:pedidoId", async (req, res, next) =>
-        pagamentoController.getByPedidoId(req, res, next),
-    );
-
     pagamentoRouter.patch("/:id/update-status", async (req, res, next) =>
         pagamentoController.patchStatus(req, res, next),
+    );
+
+    pagamentoRouter.get("/getByPedido/:pedidoId", async (req, res, next) =>
+        pagamentoController.getByPedidoId(req, res, next),
     );
 
     return pagamentoRouter;

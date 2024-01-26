@@ -4,10 +4,13 @@ import { PedidoSvcApi, PedidoSvcStatus } from "external/pedidoSvc";
 export class PedidoSvcGateway {
     constructor(private readonly pedidoSvcApi: PedidoSvcApi) {}
 
-    async updateOrderPaymentStatus(pedidoId: string, tipo: PagamentoTipoEnum): Promise<string> {
-        const { data } = await this.pedidoSvcApi.patch<{ qr_data: string }>(
-            `/${pedidoId}/update-payment-status`, { statusPagamento: this.parseStatusPedidoSvc(tipo) });
-        return data.qr_data;
+    async updateOrderPaymentStatus(
+        pedidoId: string,
+        tipo: PagamentoTipoEnum,
+    ): Promise<void> {
+        await this.pedidoSvcApi.patch(`/${pedidoId}/update-payment-status`, {
+            statusPagamento: this.parseStatusPedidoSvc(tipo),
+        });
     }
 
     parseStatusPedidoSvc(tipo: PagamentoTipoEnum): PedidoSvcStatus {

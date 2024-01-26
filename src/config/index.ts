@@ -2,7 +2,7 @@ import { parseEnvInt, parseEnvStr } from "./utils";
 
 export const serverConfig = {
     env: parseEnvStr("NODE_ENV", "development"),
-    port: parseEnvInt("PORT", 6001),
+    port: parseEnvInt("PORT", 6003),
     isProduction: process.env.NODE_ENV === "production",
     isDevelopment: process.env.NODE_ENV === "development",
     mongo: {
@@ -24,7 +24,7 @@ export const serverConfig = {
     pedidosMicroService: {
         apiUrl: parseEnvStr(
             "PEDIDO_SVC_URL",
-            "http://localhost:6001/api/pedido",
+            "http://localhost:6004/api/pedido",
         ),
     }
 } as const;

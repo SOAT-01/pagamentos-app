@@ -177,7 +177,7 @@ export const PagamentoPaths = {
             },
         },
     },
-    "/pedido/{id}/update-status": {
+    "/pagamento/{id}/update-status": {
         patch: {
             tags: ["pagamento"],
             summary: "Rota para atualizar o status de um pagamento",
