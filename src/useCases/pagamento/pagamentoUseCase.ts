@@ -6,13 +6,15 @@ import { ResourceNotFoundError } from "utils/errors/resourceNotFoundError";
 import { PagamentoTipoEnum } from "entities/pagamento";
 import { AssertionConcern } from "utils/assertionConcern";
 import { BadError } from "utils/errors/badError";
-import { PedidoSvcGateway } from "gateways/pedidoSvcGateway";
-import { pedidoSvcAPi } from "external/pedidoSvc";
+import { PagamentoModel } from "external/mongo/models";
+import { QueueManager } from "external/queueService";
+import { PedidoStatus } from "external/pedidoSvc";
 
 export class PagamentoUseCase implements IPagamentoUseCase {
     constructor(
+        private readonly pagamentoModel: typeof PagamentoModel,
         private readonly pagamentoGateway: PagamentoGateway,
-        private readonly pedidoSvcGateway: PedidoSvcGateway,
+        private readonly pedidoQueueManager: QueueManager,
     ) {}
 
     public async create(pagamento: PagamentoDTO): Promise<PagamentoDTO> {
@@ -81,14 +83,42 @@ export class PagamentoUseCase implements IPagamentoUseCase {
                 `Não é possível alterar o status pois já foi ${pagamentoToUpdateStatus.tipo}!`,
             );
         }
+        const session = await this.pagamentoModel.startSession();
+        session.startTransaction();
 
-        const result = await this.pagamentoGateway.updateStatus(id, status);
+        try {
+            const result = await this.pagamentoGateway.updateStatus(
+                id,
+                status,
+                session,
+            );
 
-        await this.pedidoSvcGateway.updateOrderPaymentStatus(
-            result.pedidoId,
-            result.tipo as PagamentoTipoEnum,
-        );
+            const parsedMessage = JSON.stringify({
+                pedidoId: result.pedidoId,
+                tipo: this.parseStatusPedido(result.tipo),
+            });
 
-        return PagamentoMapper.toDTO(result);
+            await this.pedidoQueueManager.enqueueMessage(parsedMessage);
+
+            await session.commitTransaction();
+            await session.endSession();
+
+            return PagamentoMapper.toDTO(result);
+        } catch (error) {
+            await session.abortTransaction();
+            await session.endSession();
+            throw new BadError(error);
+        }
+    }
+
+    private parseStatusPedido(tipo: string): PedidoStatus {
+        const statusMap = {
+            [PagamentoTipoEnum.Aprovado]: "pagamento_aprovado",
+            [PagamentoTipoEnum.Recusado]: "pagamento_nao_autorizado",
+        };
+
+        const status = statusMap[tipo] || "pagamento_pendente";
+
+        return status as PedidoStatus;
     }
 }
