@@ -28,6 +28,7 @@ export class PagamentoEventMockUseCase implements IPagamentoEventMockUseCase {
         await this.pagamentoGateway.updateStatus(
             pagamento.id,
             tipo as PagamentoTipoEnum,
+            null,
         );
     }
 }
