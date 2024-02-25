@@ -1,5 +1,5 @@
 import { PagamentoTipoEnum } from "entities/pagamento";
-import { PedidoSvcApi, PedidoSvcStatus } from "external/pedidoSvc";
+import { PedidoSvcApi, PedidoStatus } from "external/pedidoSvc";
 
 export class PedidoSvcGateway {
     constructor(private readonly pedidoSvcApi: PedidoSvcApi) {}
@@ -13,7 +13,7 @@ export class PedidoSvcGateway {
         });
     }
 
-    parseStatusPedidoSvc(tipo: PagamentoTipoEnum): PedidoSvcStatus {
+    parseStatusPedidoSvc(tipo: PagamentoTipoEnum): PedidoStatus {
         const statusMap = {
             [PagamentoTipoEnum.Aprovado]: "pagamento_aprovado",
             [PagamentoTipoEnum.Recusado]: "pagamento_nao_autorizado",
@@ -21,6 +21,6 @@ export class PedidoSvcGateway {
 
         const status = statusMap[tipo] || "pagamento_pendente";
 
-        return status as PedidoSvcStatus;
+        return status as PedidoStatus;
     }
 }
