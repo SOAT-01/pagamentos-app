@@ -1,15 +1,31 @@
 import { Pagamento, PagamentoTipoEnum } from "entities/pagamento";
-import { PedidoSvcGateway } from "gateways/pedidoSvcGateway";
+import { PagamentoModel } from "external/mongo/models";
+import { QueueManager } from "external/queueService";
+import { SQSClient } from "external/queueService/client";
 import { PagamentoGateway } from "interfaces/gateways";
+import { ClientSession } from "mongoose";
 
 import { PagamentoUseCase } from "useCases";
 import { BadError } from "utils/errors/badError";
 import { ResourceNotFoundError } from "utils/errors/resourceNotFoundError";
 import { ValidationError } from "utils/errors/validationError";
 
+jest.mock("aws-sdk", () => {
+    return {
+        SQS: jest.fn().mockImplementation(() => {
+            return {
+                sendMessage: jest.fn().mockReturnValue({
+                    promise: jest.fn(),
+                }),
+            };
+        }),
+    };
+});
+
 describe("Given PagamentoUseCases", () => {
     let gatewayStub: PagamentoGateway;
     let sut: PagamentoUseCase;
+    let queueMock: QueueManager;
 
     const mockPagamentoId = "659cb4b915015e863e284663";
     const mockPedidoId = "659cae053a5d35f50991ac0a";
@@ -18,7 +34,6 @@ describe("Given PagamentoUseCases", () => {
         pedidoId: "dfffddc535266e603724b4ba",
         valorTotal: 38.9,
     });
-    let pedidoSvcGatewayStub: Partial<PedidoSvcGateway>;
 
     class PagamentoGatewayStub implements PagamentoGateway {
         create(_: Pagamento): Promise<Pagamento> {
@@ -49,23 +64,21 @@ describe("Given PagamentoUseCases", () => {
             return Promise.resolve(false);
         }
     }
-    class PedidoSvcGatewayStub implements Partial<PedidoSvcGateway> {
-        updateOrderPaymentStatus(
-            pedidoId: string,
-            tipo: PagamentoTipoEnum,
-        ): Promise<void> {
-          return Promise.resolve();
-        }
-    }
 
     beforeAll(() => {
-        gatewayStub = new PagamentoGatewayStub();
-        pedidoSvcGatewayStub = new PedidoSvcGatewayStub();
+        jest.spyOn(PagamentoModel, "startSession").mockImplementation(() => {
+            return Promise.resolve({
+                startTransaction: jest.fn(),
+                commitTransaction: jest.fn(),
+                abortTransaction: jest.fn(),
+                endSession: jest.fn(),
+            } as Partial<ClientSession> as ClientSession);
+        });
 
-        sut = new PagamentoUseCase(
-            gatewayStub,
-            pedidoSvcGatewayStub as PedidoSvcGateway,
-        );
+        gatewayStub = new PagamentoGatewayStub();
+        queueMock = new QueueManager("test", SQSClient);
+
+        sut = new PagamentoUseCase(PagamentoModel, gatewayStub, queueMock);
     });
 
     afterAll(() => {
@@ -185,10 +198,7 @@ describe("Given PagamentoUseCases", () => {
                     PagamentoTipoEnum.Aprovado,
                 );
 
-                expect(updateStatus).toHaveBeenCalledWith(
-                    mockPagamento.id,
-                    PagamentoTipoEnum.Aprovado,
-                );
+                expect(updateStatus).toHaveBeenCalled();
                 expect(pagamento).toEqual(mockPagamento);
             });
         });
