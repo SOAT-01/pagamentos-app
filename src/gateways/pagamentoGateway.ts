@@ -3,6 +3,7 @@ import { PagamentoGateway } from "interfaces/gateways";
 import { Pagamento, PagamentoTipoEnum } from "entities/pagamento";
 import { PagamentoModel } from "external/mongo/models";
 import { PagamentoMapper } from "adapters/mappers";
+import { ClientSession } from "mongoose";
 
 export class PagamentoMongoGateway implements PagamentoGateway {
     constructor(private readonly pagamentoModel: typeof PagamentoModel) {}
@@ -18,7 +19,7 @@ export class PagamentoMongoGateway implements PagamentoGateway {
             id: result.id,
             pedidoId: result.pedidoId,
             tipo: result.tipo,
-            valorTotal: result.valorTotal
+            valorTotal: result.valorTotal,
         });
     }
 
@@ -34,14 +35,12 @@ export class PagamentoMongoGateway implements PagamentoGateway {
             .sort({ createdAt: 1 });
 
         return results.map((result) =>
-            PagamentoMapper.toDomain(
-                {
-                    id: result._id,
-                    tipo: result.tipo,
-                    pedidoId: result.pedidoId,
-                    valorTotal: result.valorTotal,
-                },
-            ),
+            PagamentoMapper.toDomain({
+                id: result._id,
+                tipo: result.tipo,
+                pedidoId: result.pedidoId,
+                valorTotal: result.valorTotal,
+            }),
         );
     }
 
@@ -52,35 +51,35 @@ export class PagamentoMongoGateway implements PagamentoGateway {
         });
 
         if (result) {
-            return PagamentoMapper.toDomain(
-                {
-                    id: result.id,
-                    tipo: result.tipo,
-                    pedidoId: result.pedidoId,
-                    valorTotal: result.valorTotal,
-                },
-            );
+            return PagamentoMapper.toDomain({
+                id: result.id,
+                tipo: result.tipo,
+                pedidoId: result.pedidoId,
+                valorTotal: result.valorTotal,
+            });
         }
-
     }
 
-    async updateStatus(id: string, status: PagamentoTipoEnum): Promise<Pagamento> {
+    async updateStatus(
+        id: string,
+        status: PagamentoTipoEnum,
+        session: ClientSession,
+    ): Promise<Pagamento> {
         const result = await this.pagamentoModel.findOneAndUpdate(
             { _id: id },
             { tipo: status },
             {
                 new: true,
+                session,
             },
         );
 
-        return PagamentoMapper.toDomain(
-            {
-                id: result.id,
-                tipo: result.tipo,
-                pedidoId: result.pedidoId,
-                valorTotal: result.valorTotal,
-            },
-        );
+        return PagamentoMapper.toDomain({
+            id: result.id,
+            tipo: result.tipo,
+            pedidoId: result.pedidoId,
+            valorTotal: result.valorTotal,
+        });
     }
 
     async getByPedidoId(pedidoId: string): Promise<Pagamento> {
@@ -90,18 +89,16 @@ export class PagamentoMongoGateway implements PagamentoGateway {
         });
 
         if (result) {
-            return PagamentoMapper.toDomain(
-                {
-                    id: result.id,
-                    tipo: result.tipo,
-                    pedidoId: result.pedidoId,
-                    valorTotal: result.valorTotal,
-                },
-            );
+            return PagamentoMapper.toDomain({
+                id: result.id,
+                tipo: result.tipo,
+                pedidoId: result.pedidoId,
+                valorTotal: result.valorTotal,
+            });
         }
     }
 
-    async checkDuplicate(args: { pedidoId: string; }): Promise<boolean> {
+    async checkDuplicate(args: { pedidoId: string }): Promise<boolean> {
         const result = await this.pagamentoModel.count({
             pedidoId: args.pedidoId,
             deleted: { $ne: true },

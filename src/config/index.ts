@@ -26,5 +26,16 @@ export const serverConfig = {
             "PEDIDO_SVC_URL",
             "http://localhost:6004/api/pedido",
         ),
-    }
+    },
+    sqs: {
+        region: parseEnvStr("SQS_REGION"),
+        accessKeyId: parseEnvStr("SQS_ACCESS_KEY_ID"),
+        secretAccessKey: parseEnvStr("SQS_SECRET_ACCESS_KEY"),
+    },
+    queues: {
+        confirmacaoPagemento: parseEnvStr(
+            "QUEUE_CONFIRMACAO_PAGAMENTO",
+            "https://sqs.us-east-1.amazonaws.com/146747026776/confirmacao-pagamento",
+        ),
+    },
 } as const;
